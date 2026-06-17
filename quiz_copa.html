@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz da Copa do Mundo ⚽</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: #0d1f12;
+  color: #f0f0f0;
+  min-height: 100vh;
+}
+
+/* LOADING */
+#loading {
+  position: fixed; inset: 0;
+  background: #0d1f12;
+  z-index: 999;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 20px;
+  transition: opacity 0.5s;
+}
+#loading.gone { opacity: 0; pointer-events: none; }
+#loading h1 { font-size: 2.5rem; color: #f5c518; font-weight: 800; }
+#loading p { color: #aaa; font-size: 0.9rem; }
+.load-bar { width: 200px; height: 4px; background: #1a3a1f; border-radius: 4px; overflow: hidden; }
+.load-bar-fill { height: 100%; background: #f5c518; animation: fill 1.8s ease forwards; }
+@keyframes fill { to { width: 100%; } }
+
+/* LAYOUT */
+.wrap {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px 16px 60px;
+}
+
+/* HEADER */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0 20px;
+}
+.logo { font-size: 1.3rem; font-weight: 800; color: #f5c518; }
+.logo span { color: #fff; }
+.sound-btn {
+  background: #1a3a1f;
+  border: 1px solid #2a5a2f;
+  border-radius: 50%;
+  width: 40px; height: 40px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: #f0f0f0;
+}
+
+/* SCREENS */
+.screen { display: none; flex-direction: column; gap: 16px; }
+.screen.active { display: flex; }
+
+/* HERO IMAGE */
+.hero-img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 14px;
+  display: block;
+}
+@media (max-width: 480px) { .hero-img { height: 170px; } }
+
+/* HERO TEXT BLOCK */
+.hero-text h1 { font-size: 1.8rem; font-weight: 800; line-height: 1.2; }
+.hero-text h1 span { color: #f5c518; }
+.hero-text p { color: #aaa; font-size: 0.9rem; margin-top: 6px; }
+
+/* SECTION LABEL */
+.label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #aaa;
+}
+
+/* DIFFICULTY GRID */
+.diff-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.diff-card {
+  background: #1a3a1f;
+  border: 2px solid #2a5a2f;
+  border-radius: 12px;
+  padding: 16px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.diff-card:hover { border-color: #f5c518; }
+.diff-card.sel-f { border-color: #1db954; background: rgba(29,185,84,0.12); }
+.diff-card.sel-m { border-color: #f5a623; background: rgba(245,166,35,0.12); }
+.diff-card.sel-d { border-color: #ff3e4d; background: rgba(255,62,77,0.12); }
+.diff-icon { font-size: 1.8rem; display: block; margin-bottom: 8px; }
+.diff-name { font-weight: 700; font-size: 0.95rem; display: block; margin-bottom: 4px; }
+.diff-name.f { color: #1db954; }
+.diff-name.m { color: #f5a623; }
+.diff-name.d { color: #ff3e4d; }
+.diff-meta { font-size: 0.7rem; color: #888; }
+
+/* BUTTONS */
+.btn-main {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  background: #f5c518;
+  color: #0d1f12;
+  transition: background 0.2s, transform 0.1s;
+}
+.btn-main:hover:not(:disabled) { background: #ffd740; transform: translateY(-1px); }
+.btn-main:disabled { background: #2a3a2f; color: #555; cursor: not-allowed; }
+
+.btn-sec {
+  width: 100%;
+  padding: 13px;
+  border: 2px solid #2a5a2f;
+  border-radius: 12px;
+  background: transparent;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #aaa;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.btn-sec:hover { border-color: #f5c518; color: #f5c518; }
+
+/* QUIZ SCREEN */
+.quiz-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.q-badge {
+  background: rgba(245,197,24,0.12);
+  border: 1px solid rgba(245,197,24,0.3);
+  color: #f5c518;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 4px 14px;
+  border-radius: 20px;
+}
+.level-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+.level-badge.f { background: rgba(29,185,84,0.15); color: #1db954; border: 1px solid #1db954; }
+.level-badge.m { background: rgba(245,166,35,0.15); color: #f5a623; border: 1px solid #f5a623; }
+.level-badge.d { background: rgba(255,62,77,0.15); color: #ff3e4d; border: 1px solid #ff3e4d; }
+.score-text { font-size: 0.85rem; color: #aaa; }
+.score-text strong { color: #1db954; font-size: 1rem; }
+
+/* PROGRESS BAR */
+.prog-bar { height: 5px; background: #1a3a1f; border-radius: 4px; overflow: hidden; }
+.prog-fill { height: 100%; background: #1db954; border-radius: 4px; transition: width 0.5s ease; }
+
+/* TIMER */
+.timer-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #1a3a1f;
+  border: 1px solid #2a5a2f;
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+.timer-ring-wrap { position: relative; flex-shrink: 0; }
+.timer-ring { width: 44px; height: 44px; transform: rotate(-90deg); }
+.ring-bg { fill: none; stroke: #2a5a2f; stroke-width: 3; }
+.ring-fill {
+  fill: none; stroke: #1db954; stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 113; stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.9s linear, stroke 0.3s;
+}
+.ring-fill.warn { stroke: #f5a623; }
+.ring-fill.crit { stroke: #ff3e4d; }
+.timer-center {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 700;
+}
+.timer-info { flex: 1; }
+.timer-lbl { font-size: 0.65rem; letter-spacing: 2px; color: #888; text-transform: uppercase; margin-bottom: 4px; }
+.timer-bar-bg { height: 5px; background: #0d1f12; border-radius: 3px; overflow: hidden; }
+.timer-bar-inner { height: 100%; background: #1db954; border-radius: 3px; transition: width 0.9s linear, background 0.3s; }
+.timer-bar-inner.warn { background: #f5a623; }
+.timer-bar-inner.crit { background: #ff3e4d; }
+.timer-num { font-size: 1.8rem; font-weight: 700; line-height: 1; }
+.timer-num.warn { color: #f5a623; }
+.timer-num.crit { color: #ff3e4d; }
+
+/* STREAK */
+.streak {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  justify-content: center;
+  background: #1a3a1f;
+  border: 1px solid #2a5a2f;
+  border-radius: 20px;
+  padding: 8px 14px;
+}
+.streak-lbl { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: #888; margin-right: 4px; }
+.s-dot {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid #2a5a2f;
+  background: #0d1f12;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.s-dot.hit { background: #1db954; border-color: #1db954; }
+.s-dot.miss { background: #ff3e4d; border-color: #ff3e4d; }
+.s-dot.cur { border-color: #f5c518; box-shadow: 0 0 0 3px rgba(245,197,24,0.2); }
+
+/* QUESTION IMAGE */
+.q-img-wrap {
+  width: 100%;
+  height: 150px;
+  border-radius: 12px;
+  overflow: hidden;
+  display: none;
+}
+.q-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+@media (max-width: 480px) { .q-img-wrap { height: 120px; } }
+
+/* QUESTION CARD */
+.q-card {
+  background: #1a3a1f;
+  border: 1px solid #2a5a2f;
+  border-left: 3px solid #f5c518;
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.q-num { font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; color: #f5c518; margin-bottom: 8px; }
+.q-text { font-size: 1rem; font-weight: 600; line-height: 1.5; }
+
+/* ANSWERS */
+.answers { display: flex; flex-direction: column; gap: 8px; }
+.ans-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  background: #1a3a1f;
+  border: 1px solid #2a5a2f;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+  color: #f0f0f0;
+  font-family: 'Poppins', sans-serif;
+}
+.ans-btn:hover:not(:disabled) { border-color: #f5c518; background: #1f4a24; }
+.ans-btn:disabled { cursor: not-allowed; }
+.ans-letter {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; font-weight: 700;
+  background: rgba(245,197,24,0.1);
+  color: #f5c518;
+  border: 1px solid rgba(245,197,24,0.3);
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.ans-btn:hover:not(:disabled) .ans-letter { background: #f5c518; color: #0d1f12; }
+.ans-text { font-size: 0.9rem; font-weight: 500; flex: 1; line-height: 1.3; }
+
+.ans-btn.correct { border-color: #1db954 !important; background: rgba(29,185,84,0.12) !important; }
+.ans-btn.correct .ans-letter { background: #1db954; color: #0d1f12; border-color: #1db954; }
+.ans-btn.correct .ans-text { color: #7dffb3; }
+.ans-btn.wrong { border-color: #ff3e4d !important; background: rgba(255,62,77,0.1) !important; }
+.ans-btn.wrong .ans-letter { background: #ff3e4d; color: #fff; border-color: #ff3e4d; }
+.ans-btn.wrong .ans-text { color: #ff8c96; }
+.ans-btn.revealed { border-color: #1db954 !important; }
+.ans-btn.revealed .ans-letter { background: rgba(29,185,84,0.25); color: #1db954; border-color: #1db954; }
+
+/* FEEDBACK */
+.feedback {
+  display: none;
+  align-items: flex-start;
+  gap: 10px;
+  border-radius: 10px;
+  padding: 12px 14px;
+  border: 1px solid;
+}
+.feedback.active { display: flex; }
+.feedback.ok { background: rgba(29,185,84,0.1); border-color: rgba(29,185,84,0.4); }
+.feedback.no { background: rgba(255,62,77,0.1); border-color: rgba(255,62,77,0.4); }
+.feedback.timeout { background: rgba(245,166,35,0.1); border-color: rgba(245,166,35,0.4); }
+.fb-icon { font-size: 1.3rem; flex-shrink: 0; }
+.fb-title { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; margin-bottom: 3px; }
+.feedback.ok .fb-title { color: #1db954; }
+.feedback.no .fb-title { color: #ff3e4d; }
+.feedback.timeout .fb-title { color: #f5a623; }
+.fb-fact { font-size: 0.8rem; color: #aaa; line-height: 1.5; }
+.fb-fact strong { color: #f0f0f0; }
+
+/* NEXT BTN */
+.btn-next {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: #f5c518;
+  color: #0d1f12;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: none;
+  transition: background 0.2s;
+}
+.btn-next.show { display: block; }
+.btn-next:hover { background: #ffd740; }
+
+/* RESULT */
+.result-img {
+  width: 100%; height: 200px;
+  object-fit: cover;
+  border-radius: 14px;
+  display: block;
+}
+.result-header {
+  text-align: center;
+  margin-top: 4px;
+}
+.result-emoji { font-size: 3.5rem; line-height: 1; }
+.result-title { font-size: 1.8rem; font-weight: 800; margin-top: 8px; }
+.result-title .gold { color: #f5c518; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.stat-card {
+  background: #1a3a1f;
+  border: 1px solid #2a5a2f;
+  border-radius: 12px;
+  padding: 16px 8px;
+  text-align: center;
+}
+.stat-val { font-size: 2rem; font-weight: 800; }
+.stat-card:nth-child(1) .stat-val { color: #1db954; }
+.stat-card:nth-child(2) .stat-val { color: #f5c518; }
+.stat-card:nth-child(3) .stat-val { color: #60a8ff; }
+.stat-lbl { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: #888; margin-top: 4px; }
+
+.perf-wrap { }
+.perf-labels { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.perf-labels span { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: #888; }
+.perf-labels strong { font-size: 1.1rem; font-weight: 700; color: #f5c518; }
+.perf-bar { height: 8px; background: #1a3a1f; border-radius: 4px; overflow: hidden; }
+.perf-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #1db954, #f5c518); transition: width 1.2s ease; }
+
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #1a3a1f;
+  border: 1px solid #2a5a2f;
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+.rank-icon { font-size: 2.2rem; flex-shrink: 0; }
+.rank-title { font-size: 1.1rem; font-weight: 700; color: #f5c518; }
+.rank-desc { font-size: 0.8rem; color: #888; margin-top: 2px; }
+
+.msg-card {
+  background: #1a3a1f;
+  border: 1px solid #2a5a2f;
+  border-left: 3px solid #f5c518;
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.msg-lbl { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: #f5c518; margin-bottom: 6px; }
+.msg-text { font-size: 0.88rem; color: #aaa; line-height: 1.6; }
+
+.result-actions { display: flex; flex-direction: column; gap: 10px; }
+
+/* SOUND */
+#sound-toggle {
+  position: fixed;
+  bottom: 18px; right: 18px;
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: #1a3a1f;
+  border: 1px solid #2a5a2f;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: #f0f0f0;
+  z-index: 100;
+}
+
+/* CONFETTI */
+#confetti-canvas { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
+
+@media (max-width: 480px) {
+  .wrap { padding: 14px 12px 50px; }
+  .result-img { height: 160px; }
+  .stats-grid { gap: 8px; }
+  .stat-val { font-size: 1.6rem; }
+}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <h1>⚽ Copa Quiz</h1>
+  <p>Preparando o desafio...</p>
+  <div class="load-bar"><div class="load-bar-fill"></div></div>
+</div>
+
+<canvas id="confetti-canvas"></canvas>
+<button id="sound-toggle" title="Som">🔊</button>
+
+<div class="wrap">
+
+  <header>
+    <div class="logo">⚽ <span>Copa</span> Quiz</div>
+  </header>
+
+  <!-- INÍCIO -->
+  <div id="screen-ini" class="screen active">
+    <img class="hero-img"
+      src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/FIFA_World_Cup_Trophy_2010.jpg/800px-FIFA_World_Cup_Trophy_2010.jpg"
+      alt="Troféu Copa do Mundo"
+      onerror="this.src='https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80'"
+    >
+    <div class="hero-text">
+      <h1>Desafio da <span>Copa do Mundo</span></h1>
+      <p>Teste seus conhecimentos sobre o maior torneio do futebol mundial!</p>
+    </div>
+    <div class="label">Escolha o nível de dificuldade</div>
+    <div class="diff-grid">
+      <div class="diff-card" id="card-f" onclick="selecionarNivel('f',this)">
+        <span class="diff-icon">🥉</span>
+        <span class="diff-name f">Fácil</span>
+        <div class="diff-meta">3 min · 10 perguntas</div>
+      </div>
+      <div class="diff-card" id="card-m" onclick="selecionarNivel('m',this)">
+        <span class="diff-icon">🥈</span>
+        <span class="diff-name m">Médio</span>
+        <div class="diff-meta">2:30 min · 10 perguntas</div>
+      </div>
+      <div class="diff-card" id="card-d" onclick="selecionarNivel('d',this)">
+        <span class="diff-icon">🥇</span>
+        <span class="diff-name d">Difícil</span>
+        <div class="diff-meta">2 min · 10 perguntas</div>
+      </div>
+    </div>
+    <button class="btn-main" id="btn-start" onclick="iniciar()" disabled>SELECIONE UM NÍVEL</button>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="screen-quiz" class="screen">
+    <div class="quiz-top">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="q-badge" id="qnum">1 / 10</span>
+        <span class="level-badge f" id="qnivel">Fácil</span>
+      </div>
+      <div class="score-text"><strong id="score-live">0</strong> acertos</div>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    <div class="timer-row">
+      <div class="timer-ring-wrap">
+        <svg class="timer-ring" viewBox="0 0 44 44">
+          <circle class="ring-bg" cx="22" cy="22" r="18"/>
+          <circle class="ring-fill" id="timerRing" cx="22" cy="22" r="18"/>
+        </svg>
+        <div class="timer-center" id="timerCenter">3:00</div>
+      </div>
+      <div class="timer-info">
+        <div class="timer-lbl">⏱ Tempo restante</div>
+        <div class="timer-bar-bg"><div class="timer-bar-inner" id="timerBar" style="width:100%"></div></div>
+      </div>
+      <div class="timer-num" id="timerNum">3:00</div>
+    </div>
+    <div class="streak" id="streakBar"><span class="streak-lbl">Progresso</span></div>
+    <div class="q-img-wrap" id="qImgWrap"><img id="qImg" src="" alt=""></div>
+    <div class="q-card">
+      <div class="q-num" id="qNum">PERGUNTA 1</div>
+      <div class="q-text" id="qText"></div>
+    </div>
+    <div class="answers" id="answersList"></div>
+    <div class="feedback" id="feedbackBox">
+      <div class="fb-icon" id="fbIcon"></div>
+      <div>
+        <div class="fb-title" id="fbTitle"></div>
+        <div class="fb-fact" id="fbFact"></div>
+      </div>
+    </div>
+    <button class="btn-next" id="btnNext" onclick="proxima()">PRÓXIMA →</button>
+  </div>
+
+  <!-- RESULTADO -->
+  <div id="screen-res" class="screen">
+    <img class="result-img" id="resultImg"
+      src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/FIFA_World_Cup_Trophy_2010.jpg/800px-FIFA_World_Cup_Trophy_2010.jpg"
+      alt="Resultado"
+    >
+    <div class="result-header">
+      <div class="result-emoji" id="resultEmoji">🏆</div>
+      <div class="result-title" id="resultTitle">CAMPEÃO <span class="gold">MUNDIAL</span></div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val" id="statAcertos">0</div><div class="stat-lbl">Acertos</div></div>
+      <div class="stat-card"><div class="stat-val" id="statTotal">0</div><div class="stat-lbl">Perguntas</div></div>
+      <div class="stat-card"><div class="stat-val" id="statPct">0%</div><div class="stat-lbl">Aproveit.</div></div>
+    </div>
+    <div class="perf-wrap">
+      <div class="perf-labels"><span>Desempenho</span><strong id="perfPct">0%</strong></div>
+      <div class="perf-bar"><div class="perf-fill" id="perfFill" style="width:0%"></div></div>
+    </div>
+    <div class="rank-row">
+      <div class="rank-icon" id="rankIcon">🥇</div>
+      <div>
+        <div class="rank-title" id="rankTitle">Elite</div>
+        <div class="rank-desc" id="rankDesc">Classificação do jogador</div>
+      </div>
+    </div>
+    <div class="msg-card">
+      <div class="msg-lbl">📊 Análise do desempenho</div>
+      <div class="msg-text" id="resultMsg"></div>
+    </div>
+    <div class="result-actions">
+      <button class="btn-main" onclick="voltarInicio()">↺ JOGAR NOVAMENTE</button>
+      <button class="btn-sec" onclick="jogarMesmoNivel()">TENTAR MESMO NÍVEL</button>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+const BANCO = {
+  f: [
+    {p:"Qual país tem mais títulos na Copa do Mundo?",a:["Alemanha","Argentina","Brasil","Itália"],c:2,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Brazil_World_Cup_2014.jpg/800px-Brazil_World_Cup_2014.jpg",
+     fun:"O Brasil conquistou 5 títulos: 1958, 1962, 1970, 1994 e 2002. Única seleção pentacampeã!"},
+    {p:"Em qual país foi realizada a Copa do Mundo de 2022?",a:["Arábia Saudita","Rússia","Qatar","Emirados Árabes"],c:2,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Lusail_Stadium_2022.jpg/800px-Lusail_Stadium_2022.jpg",
+     fun:"O Qatar foi o primeiro país árabe a sediar uma Copa do Mundo, realizada em novembro e dezembro."},
+    {p:"Quem foi campeã da Copa do Mundo de 2022?",a:["França","Brasil","Portugal","Argentina"],c:3,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/FIFA_World_Cup_2022.jpg/800px-FIFA_World_Cup_2022.jpg",
+     fun:"A Argentina venceu a França nos pênaltis na final épica de 2022 no Qatar, com Messi levantando o troféu."},
+    {p:"Qual jogador é conhecido como 'O Rei do Futebol'?",a:["Zico","Ronaldinho","Pelé","Romário"],c:2,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Pele_celebrating.jpg/640px-Pele_celebrating.jpg",
+     fun:"Pelé é o único jogador a vencer 3 Copas do Mundo: 1958, 1962 e 1970, tornando-se imortal no futebol."},
+    {p:"Quantas edições da Copa do Mundo já foram realizadas até 2022?",a:["18","20","22","24"],c:2,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/FIFA_World_Cup_Trophy_2010.jpg/800px-FIFA_World_Cup_Trophy_2010.jpg",
+     fun:"A Copa de 2022 foi a 22ª edição do torneio, realizado desde 1930 com duas pausas durante a 2ª Guerra."},
+    {p:"Em que ano o Brasil sediou a Copa do Mundo pela primeira vez?",a:["1938","1950","1958","1970"],c:1,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Maracan%C3%A3_-_Rio_de_Janeiro.jpg/800px-Maracan%C3%A3_-_Rio_de_Janeiro.jpg",
+     fun:"O Brasil sediou a Copa em 1950, quando perdeu a final para o Uruguai no famoso Maracanazo."},
+    {p:"Qual cor predomina no uniforme titular da seleção brasileira?",a:["Verde","Branco","Amarelo","Azul"],c:2,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Brazil_World_Cup_2014.jpg/800px-Brazil_World_Cup_2014.jpg",
+     fun:"O amarelo-ouro identifica o Brasil desde a Copa de 1954, tornando-se símbolo do futebol brasileiro."},
+    {p:"A Copa do Mundo é organizada por qual entidade?",a:["UEFA","COI","FIFA","CONMEBOL"],c:2,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/FIFA_World_Cup_Trophy_2010.jpg/800px-FIFA_World_Cup_Trophy_2010.jpg",
+     fun:"A FIFA (Federação Internacional de Futebol) organiza a Copa desde a primeira edição em 1930."},
+    {p:"Qual seleção europeia tem mais títulos mundiais?",a:["França","Espanha","Alemanha","Itália"],c:3,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Italy_national_football_team_%28cropped%29.jpg/640px-Italy_national_football_team_%28cropped%29.jpg",
+     fun:"Itália e Alemanha lideram entre os europeus com 4 títulos cada (Alemanha: 1954, 1974, 1990, 2014)."},
+    {p:"De quantos em quantos anos acontece a Copa do Mundo?",a:["2 anos","3 anos","4 anos","5 anos"],c:2,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/FIFA_World_Cup_Trophy_2010.jpg/800px-FIFA_World_Cup_Trophy_2010.jpg",
+     fun:"O ciclo quadrienal existe desde 1930, exceto pelas pausas das edições de 1942 e 1946 devido à 2ª Guerra."}
+  ],
+  m: [
+    {p:"Quem é o artilheiro máximo da história das Copas do Mundo?",a:["Pelé","Ronaldo Fenômeno","Miroslav Klose","Gerd Müller"],c:2,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Miroslav_Klose_2014.jpg/640px-Miroslav_Klose_2014.jpg",
+     fun:"Miroslav Klose marcou 16 gols em Copas (2002–2014), ultrapassando Ronaldo Fenômeno (15 gols)."},
+    {p:"Qual foi o resultado do famoso Maracanazo em 1950?",a:["Brasil 2x1 Uruguai","Uruguai 2x1 Brasil","Brasil 3x1 Uruguai","Uruguai 3x0 Brasil"],c:1,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Maracan%C3%A3_-_Rio_de_Janeiro.jpg/800px-Maracan%C3%A3_-_Rio_de_Janeiro.jpg",
+     fun:"O Uruguai venceu por 2x1 diante de cerca de 200 mil torcedores no Maracanã, em uma das maiores tragédias do futebol."},
+    {p:"Qual foi o resultado do Mineirazo na semifinal de 2014?",a:["Brasil 5x1 Alemanha","Alemanha 5x1 Brasil","Alemanha 7x1 Brasil","Brasil 7x0 Alemanha"],c:2,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Mineirao_stadium_2014.jpg/800px-Mineirao_stadium_2014.jpg",
+     fun:"A Alemanha venceu por 7x1 no Mineirão em apenas 29 minutos — a maior goleada do Brasil em Copas."},
+    {p:"Quantas Copas do Mundo a Argentina já conquistou?",a:["1","2","3","4"],c:2,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/FIFA_World_Cup_2022.jpg/800px-FIFA_World_Cup_2022.jpg",
+     fun:"Argentina conquistou 3 títulos: 1978 (Buenos Aires), 1986 (México) e 2022 (Qatar) com Messi."},
+    {p:"Em qual Copa Maradona fez o gol 'A mão de Deus'?",a:["1978","1982","1986","1990"],c:2,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Maradona_-_Mondiale_1994.jpg/640px-Maradona_-_Mondiale_1994.jpg",
+     fun:"O gol foi nas quartas de final de 1986 no México contra a Inglaterra — Maradona também marcou o 'Gol do Século' nessa partida."},
+    {p:"Qual seleção venceu a Copa do Mundo de 2018?",a:["Croácia","Bélgica","França","Inglaterra"],c:2,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Luzhniki_Stadium_2018_FIFA_World_Cup_final.jpg/800px-Luzhniki_Stadium_2018_FIFA_World_Cup_final.jpg",
+     fun:"A França venceu a Croácia por 4x2 na final de 2018 em Moscou, conquistando seu 2º título mundial."},
+    {p:"Qual país foi sede da Copa do Mundo de 2014?",a:["Argentina","México","Brasil","Colômbia"],c:2,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Mineirao_stadium_2014.jpg/800px-Mineirao_stadium_2014.jpg",
+     fun:"O Brasil sediou sua segunda Copa em 2014, com jogos em 12 cidades e 64 partidas disputadas."},
+    {p:"Ronaldo Fenômeno marcou quantos gols no total em Copas?",a:["12","13","14","15"],c:3,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Brazil_World_Cup_2014.jpg/800px-Brazil_World_Cup_2014.jpg",
+     fun:"Ronaldo marcou 15 gols em 3 Copas (1994, 1998 e 2002), sendo artilheiro em 2002 com 8 gols na edição."},
+    {p:"Qual foi a primeira Copa do Mundo da história?",a:["1928 - França","1930 - Uruguai","1934 - Itália","1938 - França"],c:1,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Estadio_Centenario_1930.jpg/640px-Estadio_Centenario_1930.jpg",
+     fun:"A 1ª Copa foi em 1930 no Uruguai, que também foi o primeiro campeão. 13 seleções participaram."},
+    {p:"Qual foi o maior placar em fase de grupos na história da Copa?",a:["Brasil 8x2 Suécia","Alemanha 8x0 Arábia Saudita","Hungria 10x1 El Salvador","Austrália 10x0 Samoa"],c:2,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/FIFA_World_Cup_Trophy_2010.jpg/800px-FIFA_World_Cup_Trophy_2010.jpg",
+     fun:"Hungria 10x1 El Salvador foi o maior placar em fase de grupos, na Copa de 1982, na Espanha."}
+  ],
+  d: [
+    {p:"Qual jogador foi artilheiro da Copa de 2002 e quantos gols fez?",a:["Ronaldo com 6","Ronaldo com 8","Rivaldo com 5","Klose com 5"],c:1,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Brazil_World_Cup_2014.jpg/800px-Brazil_World_Cup_2014.jpg",
+     fun:"Ronaldo fez 8 gols em 2002, incluindo os 2 da final contra a Alemanha, e recebeu a Bola de Ouro."},
+    {p:"Em quais anos a Copa não foi realizada por causa da 2ª Guerra?",a:["1938 e 1942","1942 e 1946","1940 e 1944","1941 e 1945"],c:1,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/FIFA_World_Cup_Trophy_2010.jpg/800px-FIFA_World_Cup_Trophy_2010.jpg",
+     fun:"As Copas de 1942 e 1946 foram canceladas devido à Segunda Guerra Mundial. A próxima ocorreu em 1950."},
+    {p:"Qual país ficou em 3º lugar na Copa de 2014 no Brasil?",a:["Argentina","Holanda","Bélgica","Uruguai"],c:1,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Mineirao_stadium_2014.jpg/800px-Mineirao_stadium_2014.jpg",
+     fun:"A Holanda venceu o Brasil por 3x0 na disputa de 3º lugar em Brasília — placar igual ao do Mineirazo."},
+    {p:"Quem marcou o gol da Alemanha na prorrogação da final de 2014?",a:["Thomas Müller","Toni Kroos","Mario Götze","Mesut Özil"],c:2,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Maracan%C3%A3_-_Rio_de_Janeiro.jpg/800px-Maracan%C3%A3_-_Rio_de_Janeiro.jpg",
+     fun:"Mario Götze marcou aos 113 minutos da prorrogação, dando o 4º título à Alemanha sobre a Argentina."},
+    {p:"Qual seleção tem o recorde de mais partidas disputadas em Copas?",a:["Itália","Alemanha","Brasil","Argentina"],c:2,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Brazil_World_Cup_2014.jpg/800px-Brazil_World_Cup_2014.jpg",
+     fun:"O Brasil é o único país que participou de todas as 22 edições da Copa e tem o recorde de jogos disputados."},
+    {p:"Qual jogador ganhou a Bola de Ouro na Copa de 2022?",a:["Kylian Mbappé","Luka Modrić","Lionel Messi","Neymar"],c:2,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/FIFA_World_Cup_2022.jpg/800px-FIFA_World_Cup_2022.jpg",
+     fun:"Messi ganhou a Bola de Ouro de 2022 após liderar a Argentina ao título, consagrando-se o melhor de todos."},
+    {p:"Qual foi o primeiro país africano a chegar nas semifinais de uma Copa?",a:["Nigéria","Camarões","Senegal","Marrocos"],c:3,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Lusail_Stadium_2022.jpg/800px-Lusail_Stadium_2022.jpg",
+     fun:"Marrocos chegou às semifinais em 2022, eliminando Bélgica, Espanha e Portugal — feito histórico para a África."},
+    {p:"Qual artilheiro fez mais gols em uma única edição da Copa?",a:["Ronaldo 2002 com 8","Just Fontaine 1958 com 13","Sándor Kocsis 1954 com 11","Gerd Müller 1970 com 10"],c:1,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/FIFA_World_Cup_Trophy_2010.jpg/800px-FIFA_World_Cup_Trophy_2010.jpg",
+     fun:"Just Fontaine marcou 13 gols em apenas 6 jogos em 1958 — recorde imbatível há mais de 65 anos."},
+    {p:"Em qual Copa do Mundo a Itália foi eliminada na fase de grupos?",a:["2010 e 2014","2014 e 2018","2010 e 2018","2018 e 2022"],c:0,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Italy_national_football_team_%28cropped%29.jpg/640px-Italy_national_football_team_%28cropped%29.jpg",
+     fun:"A Itália foi eliminada na fase de grupos tanto em 2010 (África do Sul) quanto em 2014 (Brasil)."},
+    {p:"Qual estádio sediou a final da Copa de 2014?",a:["Arena Corinthians","Estádio Mineirão","Estádio do Maracanã","Arena Castelão"],c:2,
+     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Maracan%C3%A3_-_Rio_de_Janeiro.jpg/800px-Maracan%C3%A3_-_Rio_de_Janeiro.jpg",
+     fun:"O Maracanã sediou a final entre Alemanha e Argentina em 13 de julho de 2014. Alemanha venceu por 1x0."}
+  ]
+};
+
+const NIVEL_INFO = {
+  f: { nome: "Fácil",   cls: "f", tempo: 180 },
+  m: { nome: "Médio",   cls: "m", tempo: 150 },
+  d: { nome: "Difícil", cls: "d", tempo: 120 }
+};
+const LETRAS = ['A','B','C','D'];
+
+let nivelSel=null, qs=[], idx=0, pts=0, respondeu=false;
+let timerID=null, tempoTotal=0, tempoRestante=0;
+let soundEnabled=true;
+
+/* AUDIO */
+let audioCtx=null;
+function getAudio() {
+  if (!audioCtx) try { audioCtx = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){}
+  return audioCtx;
+}
+function tone(freq, type, dur, vol=0.15, delay=0) {
+  if (!soundEnabled) return;
+  try {
+    const ctx=getAudio(); if(!ctx) return;
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type=type; o.frequency.setValueAtTime(freq, ctx.currentTime+delay);
+    g.gain.setValueAtTime(0, ctx.currentTime+delay);
+    g.gain.linearRampToValueAtTime(vol, ctx.currentTime+delay+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+delay+dur);
+    o.start(ctx.currentTime+delay); o.stop(ctx.currentTime+delay+dur+0.05);
+  } catch(e){}
+}
+const SFX = {
+  correct:  ()=>{ tone(523,'sine',0.12,0.15); tone(659,'sine',0.18,0.15,0.1); tone(784,'sine',0.22,0.12,0.2); },
+  wrong:    ()=>{ tone(220,'sawtooth',0.08,0.12); tone(180,'sawtooth',0.12,0.12,0.08); },
+  timeout:  ()=>{ tone(300,'triangle',0.3,0.1); },
+  click:    ()=>{ tone(660,'sine',0.06,0.06); },
+  next:     ()=>{ tone(440,'sine',0.07,0.06); },
+  win:      ()=>{ [523,659,784,1047].forEach((f,i)=>tone(f,'sine',0.25,0.14,i*0.1)); setTimeout(()=>[784,1047,1319].forEach((f,i)=>tone(f,'sine',0.2,0.12,i*0.08)),500); },
+  lose:     ()=>{ tone(400,'sawtooth',0.12,0.1); tone(300,'sawtooth',0.16,0.1,0.15); tone(220,'sawtooth',0.2,0.1,0.3); }
+};
+
+/* SCREEN */
+function mostrarTela(nome) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const s=document.getElementById('screen-'+nome);
+  if(s){s.classList.add('active'); s.scrollIntoView({behavior:'smooth',block:'start'});}
+}
+
+/* SHUFFLE */
+function embaralhar(l) {
+  const c=[...l];
+  for(let i=c.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[c[i],c[j]]=[c[j],c[i]];}
+  return c;
+}
+
+/* COUNT ANIM */
+function animateCount(el, target, suffix='') {
+  const start=parseInt(el.textContent)||0, dur=600, t0=performance.now();
+  function step(now) {
+    const t=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-t,3);
+    el.textContent=Math.round(start+(target-start)*e)+suffix;
+    if(t<1) requestAnimationFrame(step); else el.textContent=target+suffix;
+  }
+  requestAnimationFrame(step);
+}
+
+/* DIFFICULTY SELECT */
+function selecionarNivel(n, el) {
+  SFX.click(); nivelSel=n;
+  document.querySelectorAll('.diff-card').forEach(c=>{c.className='diff-card';});
+  const cls={f:'sel-f',m:'sel-m',d:'sel-d'};
+  el.classList.add(cls[n]);
+  const btn=document.getElementById('btn-start');
+  const nomes={f:'FÁCIL',m:'MÉDIO',d:'DIFÍCIL'};
+  btn.disabled=false; btn.textContent='JOGAR NO NÍVEL '+nomes[n]+' →';
+}
+
+/* START */
+function iniciar() {
+  if (!nivelSel) return;
+  SFX.click();
+  qs=embaralhar(BANCO[nivelSel]).slice(0,10);
+  idx=0; pts=0; respondeu=false;
+  const ni=NIVEL_INFO[nivelSel];
+  tempoTotal=ni.tempo; tempoRestante=ni.tempo;
+  const badge=document.getElementById('qnivel');
+  badge.textContent=ni.nome; badge.className='level-badge '+ni.cls;
+  buildStreak();
+  mostrarTela('quiz');
+  iniciarTimer();
+  carregarQ();
+}
+
+/* STREAK */
+function buildStreak() {
+  const bar=document.getElementById('streakBar');
+  bar.innerHTML='<span class="streak-lbl">Progresso</span>';
+  for(let i=0;i<10;i++){
+    const d=document.createElement('div');
+    d.className='s-dot'+(i===0?' cur':'');
+    d.id='sd-'+i; bar.appendChild(d);
+  }
+}
+function updateStreak(i, hit) {
+  const d=document.getElementById('sd-'+i); if(!d) return;
+  d.classList.remove('cur'); d.classList.add(hit?'hit':'miss');
+  const next=document.getElementById('sd-'+(i+1));
+  if(next) next.classList.add('cur');
+}
+
+/* TIMER */
+function iniciarTimer() {
+  clearInterval(timerID);
+  atualizarTimer();
+  timerID=setInterval(()=>{
+    tempoRestante--;
+    atualizarTimer();
+    if(tempoRestante<=0){clearInterval(timerID);timeOut();}
+  },1000);
+}
+function atualizarTimer() {
+  const m=Math.floor(tempoRestante/60), s=tempoRestante%60;
+  const str=m+':'+(s<10?'0':'')+s;
+  const pct=(tempoRestante/tempoTotal)*100;
+  document.getElementById('timerCenter').textContent=str;
+  document.getElementById('timerNum').textContent=str;
+  let st=''; if(pct<20)st='crit'; else if(pct<40)st='warn';
+  const ring=document.getElementById('timerRing');
+  ring.style.strokeDashoffset=113*(1-pct/100);
+  ring.className='ring-fill'+(st?' '+st:'');
+  const bar=document.getElementById('timerBar');
+  bar.style.width=pct+'%'; bar.className='timer-bar-inner'+(st?' '+st:'');
+  document.getElementById('timerNum').className='timer-num'+(st?' '+st:'');
+}
+
+function timeOut() {
+  if(respondeu) return;
+  respondeu=true; SFX.timeout();
+  document.querySelectorAll('.ans-btn').forEach(b=>{b.disabled=true;});
+  const correct=document.querySelectorAll('.ans-btn')[qs[idx].c];
+  if(correct) correct.classList.add('revealed');
+  updateStreak(idx,false);
+  showFeedback('timeout','⏱','Tempo Esgotado!',
+    `A resposta correta era: <strong>${qs[idx].a[qs[idx].c]}</strong>. ${qs[idx].fun}`);
+  showNextBtn();
+}
+
+/* LOAD QUESTION */
+function carregarQ() {
+  const q=qs[idx]; respondeu=false;
+  document.getElementById('qnum').textContent=(idx+1)+' / '+qs.length;
+  document.getElementById('score-live').textContent=pts;
+  document.getElementById('qNum').textContent='PERGUNTA '+(idx+1);
+  document.getElementById('progFill').style.width=(idx/qs.length*100)+'%';
+  const wrap=document.getElementById('qImgWrap'), img=document.getElementById('qImg');
+  if(q.img){img.src=q.img; wrap.style.display='block'; img.onerror=()=>{wrap.style.display='none';};}
+  else{wrap.style.display='none';}
+  document.getElementById('qText').textContent=q.p;
+  const list=document.getElementById('answersList');
+  list.innerHTML='';
+  q.a.forEach((txt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='ans-btn';
+    btn.innerHTML=`<span class="ans-letter">${LETRAS[i]}</span><span class="ans-text">${txt}</span>`;
+    btn.addEventListener('click',()=>verificar(i));
+    list.appendChild(btn);
+  });
+  document.getElementById('feedbackBox').className='feedback';
+  document.getElementById('btnNext').className='btn-next';
+}
+
+/* VERIFY */
+function verificar(cli) {
+  if(respondeu) return; respondeu=true;
+  const q=qs[idx], bts=document.querySelectorAll('.ans-btn');
+  bts.forEach(b=>{b.disabled=true;});
+  const acertou=(cli===q.c);
+  if(acertou){
+    pts++; bts[cli].classList.add('correct'); SFX.correct();
+    updateStreak(idx,true);
+    showFeedback('ok','✅','Correto!',q.fun);
+  } else {
+    bts[cli].classList.add('wrong'); bts[q.c].classList.add('revealed'); SFX.wrong();
+    updateStreak(idx,false);
+    showFeedback('no','❌','Incorreto!',`A resposta correta era: <strong>${q.a[q.c]}</strong>. ${q.fun}`);
+  }
+  document.getElementById('score-live').textContent=pts;
+  showNextBtn();
+}
+
+function showFeedback(type,icon,title,fact) {
+  const box=document.getElementById('feedbackBox');
+  box.className='feedback '+type+' active';
+  document.getElementById('fbIcon').textContent=icon;
+  document.getElementById('fbTitle').textContent=title;
+  document.getElementById('fbFact').innerHTML=fact;
+}
+function showNextBtn() {
+  const btn=document.getElementById('btnNext');
+  btn.textContent=(idx>=qs.length-1)?'VER RESULTADO 🏆':'PRÓXIMA →';
+  btn.className='btn-next show';
+}
+
+/* NEXT */
+function proxima() {
+  SFX.next(); idx++;
+  if(idx<qs.length) carregarQ();
+  else { clearInterval(timerID); mostrarResultado(); }
+}
+
+/* RESULT */
+function mostrarResultado() {
+  mostrarTela('res');
+  const tot=qs.length, pct=Math.round((pts/tot)*100);
+  setTimeout(()=>{
+    animateCount(document.getElementById('statAcertos'),pts);
+    animateCount(document.getElementById('statTotal'),tot);
+    animateCount(document.getElementById('statPct'),pct,'%');
+    document.getElementById('perfPct').textContent=pct+'%';
+    document.getElementById('perfFill').style.width=pct+'%';
+  },300);
+  let emoji, titulo, msg, rankIcon, rankTitle, rankDesc, confetti=false;
+  if(pct===100){
+    emoji='🏆'; titulo='CAMPEÃO MUNDIAL'; confetti=true;
+    rankIcon='🏆'; rankTitle='LENDA DO FUTEBOL';
+    rankDesc='Aproveitamento perfeito — você é imbatível!';
+    msg='Incrível! Você acertou absolutamente tudo! Seu conhecimento sobre a Copa do Mundo é lendário. Você poderia comentar ao vivo qualquer jogo histórico com riqueza de detalhes.';
+    SFX.win();
+  } else if(pct>=80){
+    emoji='🥇'; titulo='CRAQUE DO QUIZ'; confetti=true;
+    rankIcon='🥇'; rankTitle='ESPECIALISTA';
+    rankDesc='Você domina a história da Copa com maestria!';
+    msg='Excelente desempenho! Você tem um conhecimento aprofundado sobre o maior torneio do mundo. Faltou muito pouco para a perfeição — com mais estudo, você bate na trave!';
+    SFX.win();
+  } else if(pct>=60){
+    emoji='🥈'; titulo='TORCEDOR EXPERT';
+    rankIcon='🥈'; rankTitle='AVANÇADO';
+    rankDesc='Bom conhecimento sobre o futebol mundial';
+    msg='Bom resultado! Você tem conhecimento sólido sobre a Copa do Mundo. Com um pouco mais de estudo na história e nas estatísticas, você chegará ao topo do ranking!';
+    SFX.next();
+  } else if(pct>=40){
+    emoji='🥉'; titulo='EM DESENVOLVIMENTO';
+    rankIcon='🥉'; rankTitle='INTERMEDIÁRIO';
+    rankDesc='Você está no caminho certo, continue!';
+    msg='Você sabe o básico! A Copa do Mundo tem uma história fascinante e rica. Explore mais sobre os momentos históricos, artilheiros e seleções campeãs. Tente novamente!';
+    SFX.lose();
+  } else {
+    emoji='⚽'; titulo='CONTINUE TENTANDO';
+    rankIcon='📚'; rankTitle='APRENDIZ';
+    rankDesc='Todo campeão começa do zero';
+    msg='Não desanime! A Copa do Mundo tem mais de 90 anos de história para descobrir. Estude os grandes momentos, os campeões e as curiosidades — e volte mais forte!';
+    SFX.lose();
+  }
+  document.getElementById('resultEmoji').textContent=emoji;
+  const parts=titulo.split(' ');
+  if(parts.length>=2){
+    document.getElementById('resultTitle').innerHTML=parts[0]+' <span class="gold">'+parts.slice(1).join(' ')+'</span>';
+  } else {
+    document.getElementById('resultTitle').textContent=titulo;
+  }
+  document.getElementById('rankIcon').textContent=rankIcon;
+  document.getElementById('rankTitle').textContent=rankTitle;
+  document.getElementById('rankDesc').textContent=rankDesc;
+  document.getElementById('resultMsg').textContent=msg;
+  document.getElementById('resultImg').src=pct>=60
+    ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/FIFA_World_Cup_Trophy_2010.jpg/800px-FIFA_World_Cup_Trophy_2010.jpg'
+    : 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Mineirao_stadium_2014.jpg/800px-Mineirao_stadium_2014.jpg';
+  if(confetti) setTimeout(()=>launchConfetti(4000),600);
+}
+
+/* RESTART */
+function voltarInicio() {
+  SFX.click(); clearInterval(timerID); nivelSel=null;
+  document.querySelectorAll('.diff-card').forEach(c=>{c.className='diff-card';});
+  const btn=document.getElementById('btn-start');
+  btn.disabled=true; btn.textContent='SELECIONE UM NÍVEL';
+  mostrarTela('ini');
+}
+function jogarMesmoNivel() {
+  SFX.click(); clearInterval(timerID);
+  if(nivelSel) iniciar(); else voltarInicio();
+}
+
+/* SOUND TOGGLE */
+document.getElementById('sound-toggle').addEventListener('click',function(){
+  soundEnabled=!soundEnabled;
+  this.textContent=soundEnabled?'🔊':'🔇';
+  if(soundEnabled) SFX.click();
+});
+
+/* CONFETTI */
+function launchConfetti(dur=3000) {
+  const canvas=document.getElementById('confetti-canvas'), ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  const COLORS=['#f5c518','#ffd740','#1db954','#39ff7a','#fff','#60a8ff','#ff3e4d'];
+  const pieces=[];
+  for(let i=0;i<150;i++) pieces.push({
+    x:Math.random()*canvas.width, y:-20-Math.random()*200,
+    vx:(Math.random()-0.5)*4, vy:Math.random()*3+2,
+    rot:Math.random()*360, rotV:(Math.random()-0.5)*6,
+    w:Math.random()*10+5, h:Math.random()*5+3,
+    color:COLORS[Math.floor(Math.random()*COLORS.length)], alpha:1
+  });
+  const end=Date.now()+dur;
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const now=Date.now();
+    pieces.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.rotV;
+      if(now>end-800) p.alpha-=0.01;
+      ctx.save(); ctx.globalAlpha=Math.max(0,p.alpha);
+      ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.color; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+    });
+    if(now<end) requestAnimationFrame(draw);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  draw();
+}
+
+/* LOADING */
+window.addEventListener('load',()=>{
+  setTimeout(()=>{document.getElementById('loading').classList.add('gone');},1900);
+});
+</script>
+</body>
+</html>
